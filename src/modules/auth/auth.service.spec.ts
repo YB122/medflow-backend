@@ -21,7 +21,10 @@ describe('AuthService (login logic)', () => {
       del: jest.fn<any>(),
       refreshKey: (u: string, j: string) => `refresh:${u}:${j}`,
     } as any;
-    return { service: new AuthService(users, jwt, redis), users, jwt, redis };
+    const doctors = {
+      create: jest.fn<any>().mockResolvedValue({ _id: 'd9' }),
+    } as any;
+    return { service: new AuthService(users, jwt, redis, doctors), users, jwt, redis, doctors };
   };
 
   it('rejects unknown email', async () => {
@@ -95,5 +98,28 @@ describe('AuthService (login logic)', () => {
     await expect(service.register(undefined, '+201001234567', 'Password123!')).rejects.toBeInstanceOf(
       ConflictException,
     );
+  });
+
+  it('registers as doctor with DOCTOR role + auto profile', async () => {
+    const { service, users, doctors } = makeService(null);
+    users.findById.mockResolvedValue({ _id: 'u9', email: 'd@medflow.local', roles: [] });
+    const tokens = await service.register('d@medflow.local', undefined, 'Password123!', true);
+    expect(tokens.accessToken).toBe('signed-token');
+    expect(users.create).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'd@medflow.local' }),
+      ['DOCTOR'],
+    );
+    expect(doctors.create).toHaveBeenCalledWith({ userId: 'u9' });
+  });
+
+  it('registers as patient by default (no profile auto-create)', async () => {
+    const { service, users, doctors } = makeService(null);
+    users.findById.mockResolvedValue({ _id: 'u9', email: 'p@medflow.local', roles: [] });
+    await service.register('p@medflow.local', undefined, 'Password123!');
+    expect(users.create).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'p@medflow.local' }),
+      ['PATIENT'],
+    );
+    expect(doctors.create).not.toHaveBeenCalled();
   });
 });

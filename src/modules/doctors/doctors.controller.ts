@@ -47,6 +47,20 @@ export class DoctorsController {
     });
   }
 
+  @Get('doctors/me')
+  @Roles('DOCTOR', 'ADMIN', 'SUPER_ADMIN')
+  myProfile(@CurrentUser() user: AuthUser) {
+    return this.doctors.myProfile(user.sub);
+  }
+
+  /** The doctor's own patients (visit stats + contact). Admins may pass ?doctorId=. */
+  @Get('doctors/me/patients')
+  @Roles('DOCTOR', 'ADMIN', 'SUPER_ADMIN')
+  myPatients(@CurrentUser() user: AuthUser, @Query('doctorId') doctorId?: string) {
+    const isAdmin = user.roles.some((r) => ['ADMIN', 'SUPER_ADMIN'].includes(r));
+    return this.doctors.myPatients(user.sub, isAdmin ? doctorId : undefined);
+  }
+
   @Public()
   @Get('doctors/:id')
   profile(@Param('id') id: string): Promise<any> {
@@ -63,7 +77,19 @@ export class DoctorsController {
   @Patch('doctors/:id')
   @Roles('ADMIN', 'SUPER_ADMIN', 'DOCTOR')
   @RequirePermissions('doctor:update')
-  update(@Param('id') id: string, @Body() dto: UpdateDoctorDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateDoctorDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    // Doctors edit only their OWN profile; admins edit any.
+    const isAdmin = user.roles.some((r) => ['ADMIN', 'SUPER_ADMIN'].includes(r));
+    if (!isAdmin) {
+      const ownerId = await this.doctors.ownerOf(id);
+      if (!ownerId || ownerId !== user.sub) {
+        throw new ForbiddenException('you can only edit your own profile');
+      }
+    }
     return this.doctors.update(id, dto as any);
   }
 

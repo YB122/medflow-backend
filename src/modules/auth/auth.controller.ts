@@ -15,7 +15,7 @@ export class AuthController {
   @Public()
   @Post('register')
   register(@Body() dto: RegisterDto) {
-    return this.auth.register(dto.email, dto.phone, dto.password);
+    return this.auth.register(dto.email, dto.phone, dto.password, dto.asDoctor ?? false);
   }
 
   /** Strict rate limit: 5 attempts / minute (Redis-backed in prod via throttler storage). */

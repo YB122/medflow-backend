@@ -6,9 +6,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Appointment, AppointmentDocument, AppointmentStatus } from './schemas/appointment.schema.js';
 import { Schedule, ScheduleDocument } from '../schedules/schemas/schedule.schema.js';
+import { Doctor, DoctorDocument } from '../doctors/schemas/doctor.schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 
 export const toMinutes = (t: string): number => {
@@ -24,8 +25,23 @@ export class AppointmentsService {
   constructor(
     @InjectModel(Appointment.name) private appts: Model<AppointmentDocument>,
     @InjectModel(Schedule.name) private schedules: Model<ScheduleDocument>,
+    @InjectModel(Doctor.name) private doctorProfiles: Model<DoctorDocument>,
     private readonly events: EventsService,
   ) {}
+
+  /**
+   * Bookings store the doctor *profile* id, but callers (e.g. the doctor
+   * dashboard) often pass the *user* id — resolve either to the profile id.
+   */
+  private async resolveDoctorId(id: string): Promise<string> {
+    if (!Types.ObjectId.isValid(id)) return id;
+    const profile = await this.doctorProfiles
+      .findOne({ $or: [{ _id: id }, { userId: id }] })
+      .select('_id')
+      .lean()
+      .exec();
+    return profile ? String(profile._id) : id;
+  }
 
   /** All possible slots for a doctor on a date, minus booked ones. */
   async availableSlots(doctorId: string, date: string) {
@@ -176,8 +192,9 @@ export class AppointmentsService {
     return this.paginate({ patientId }, page, limit, status);
   }
 
-  historyForDoctor(doctorId: string, page = 1, limit = 20, status?: string) {
-    return this.paginate({ doctorId }, page, limit, status);
+  async historyForDoctor(doctorId: string, page = 1, limit = 20, status?: string) {
+    const resolved = await this.resolveDoctorId(doctorId);
+    return this.paginate({ doctorId: resolved }, page, limit, status);
   }
 
   async getById(id: string) {

@@ -5,12 +5,13 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Doctor, DoctorDocument } from './schemas/doctor.schema.js';
 import { Specialty, SpecialtyDocument } from './schemas/specialty.schema.js';
 import { Clinic, ClinicDocument } from './schemas/clinic.schema.js';
 import { Review, ReviewDocument } from './schemas/review.schema.js';
 import { Schedule, ScheduleDocument } from '../schedules/schemas/schedule.schema.js';
+import { Appointment, AppointmentDocument } from '../appointments/schemas/appointment.schema.js';
 import { RedisService } from '../../infra/redis/redis.service.js';
 import { CloudinaryService } from '../../infra/cloudinary/cloudinary.service.js';
 
@@ -22,6 +23,7 @@ export class DoctorsService {
     @InjectModel(Clinic.name) private clinics: Model<ClinicDocument>,
     @InjectModel(Review.name) private reviews: Model<ReviewDocument>,
     @InjectModel(Schedule.name) private schedules: Model<ScheduleDocument>,
+    @InjectModel(Appointment.name) private appts: Model<AppointmentDocument>,
     private readonly redis: RedisService,
     private readonly cloudinary: CloudinaryService,
   ) {}
@@ -83,6 +85,59 @@ export class DoctorsService {
     const doctor = await this.doctors.findById(id).select('userId').lean().exec();
     if (!doctor) return null;
     return String(doctor.userId);
+  }
+
+  /** Own doctor profile for the logged-in user (null when none yet). */
+  myProfile(userId: string) {
+    return this.doctors.findOne({ userId }).populate('specialtyId clinicId').lean().exec();
+  }
+
+  /**
+   * Unique patients of a doctor (derived from their appointments) with
+   * visit stats + contact info. Admins may pass any `explicitDoctorId`;
+   * otherwise the caller's own profile is resolved (user id → profile id).
+   */
+  async myPatients(userId: string, explicitDoctorId?: string) {
+    let doctorId = explicitDoctorId;
+    if (!doctorId) {
+      const profile = await this.doctors.findOne({ userId }).select('_id').lean().exec();
+      doctorId = profile ? String(profile._id) : userId;
+    }
+    if (!Types.ObjectId.isValid(doctorId)) return [];
+    const rows = await this.appts
+      .aggregate([
+        { $match: { doctorId: new Types.ObjectId(doctorId) } },
+        {
+          $group: {
+            _id: '$patientId',
+            total: { $sum: 1 },
+            upcoming: {
+              $sum: { $cond: [{ $in: ['$status', ['PENDING', 'CONFIRMED']] }, 1, 0] },
+            },
+            completed: { $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] } },
+            lastVisit: { $max: '$date' },
+          },
+        },
+        {
+          $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'user' },
+        },
+        { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
+        {
+          $project: {
+            _id: 0,
+            patientId: '$_id',
+            email: '$user.email',
+            phone: '$user.phone',
+            total: 1,
+            upcoming: 1,
+            completed: 1,
+            lastVisit: 1,
+          },
+        },
+        { $sort: { lastVisit: -1 } },
+      ])
+      .exec();
+    return rows.map((r: any) => ({ ...r, patientId: String(r.patientId) }));
   }
 
   async create(data: Partial<Doctor>) {

@@ -2,6 +2,8 @@ import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common
 import { UsersService } from './users.service.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 import { RequirePermissions } from '../../common/decorators/permissions.decorator.js';
+import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
+import type { AuthUser } from '../../common/decorators/current-user.decorator.js';
 import { UserStatus } from './schemas/user.schema.js';
 
 @Controller('users')
@@ -14,6 +16,13 @@ export class UsersController {
   @RequirePermissions('user:read')
   list(@Query('page') page = '1', @Query('limit') limit = '20') {
     return this.users.list(Number(page), Number(limit));
+  }
+
+  /** Update your OWN phone number (no admin permission needed). */
+  @Patch('me')
+  @Roles('PATIENT', 'DOCTOR', 'ADMIN', 'SUPER_ADMIN', 'STAFF')
+  updateMe(@CurrentUser() user: AuthUser, @Body() body: { phone?: string }) {
+    return this.users.updatePhone(user.sub, body.phone);
   }
 
   /** Suspend / reactivate a user account. */

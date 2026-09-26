@@ -34,6 +34,13 @@ export class Doctor {
   @Prop({ default: '' })
   photoUrl!: string;
 
+  /** Clinic location for the map picker (Cairo default on the frontend). */
+  @Prop()
+  lng?: number;
+
+  @Prop()
+  lat?: number;
+
   @Prop({ default: 0, min: 0, max: 5 })
   ratingAvg!: number;
 

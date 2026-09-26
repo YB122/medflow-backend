@@ -34,7 +34,7 @@ Health: `GET http://localhost:3000/api/v1/health`
 
 | Method | Route | Auth | Notes |
 |---|---|---|---|
-| POST | `/register` | public | email and/or phone + password, creates PATIENT, returns access+refresh |
+| POST | `/register` | public | email and/or phone + password (+`asDoctor`), creates PATIENT (or DOCTOR + profile shell), returns access+refresh |
 | POST | `/login` | public, 5/min | strict throttle, `{ identifier | email | phone, password }` |
 | POST | `/refresh` | public (valid refresh) | rotates refresh jti |
 | POST | `/logout` | JWT | body `{ refreshToken }` revokes it |

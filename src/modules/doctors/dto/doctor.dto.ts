@@ -1,4 +1,4 @@
-import { IsMongoId, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsMongoId, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class CreateDoctorDto {
   @IsMongoId()
@@ -47,6 +47,18 @@ export class UpdateDoctorDto {
   @IsOptional()
   @IsMongoId()
   clinicId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  lng?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  lat?: number;
 }
 
 export class CreateReviewDto {

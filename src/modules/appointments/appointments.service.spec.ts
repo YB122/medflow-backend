@@ -28,7 +28,12 @@ describe('AppointmentsService double-booking', () => {
       emitAppointmentApproved: jest.fn<any>(),
       emitAppointmentCancelled: jest.fn<any>(),
     } as any;
-    return new AppointmentsService(appts, sched, events);
+    const doctorProfiles = {
+      findOne: jest.fn<any>().mockReturnValue({
+        select: () => ({ lean: () => ({ exec: () => Promise.resolve(null) }) }),
+      }),
+    } as any;
+    return new AppointmentsService(appts, sched, doctorProfiles, events);
   };
 
   it('marks taken slots unavailable', async () => {

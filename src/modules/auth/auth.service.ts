@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   UnauthorizedException,
   ForbiddenException,
 } from '@nestjs/common';
@@ -9,6 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID, randomInt } from 'crypto';
 import { UsersService } from '../users/users.service.js';
+import { DoctorsService } from '../doctors/doctors.service.js';
 import { UserStatus } from '../users/schemas/user.schema.js';
 import { RedisService } from '../../infra/redis/redis.service.js';
 
@@ -31,10 +33,13 @@ export function normalizePhone(raw: string): string {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly users: UsersService,
     private readonly jwt: JwtService,
     private readonly redis: RedisService,
+    private readonly doctors: DoctorsService,
   ) {}
 
   private accessSecret(): string {
@@ -74,8 +79,8 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  /** Register with email and/or phone (at least one required). */
-  async register(email: string | undefined, phone: string | undefined, password: string) {
+  /** Register with email and/or phone (at least one required). `asDoctor` grants the DOCTOR role + an unverified profile shell. */
+  async register(email: string | undefined, phone: string | undefined, password: string, asDoctor = false) {
     const cleanEmail = email?.trim().toLowerCase() || undefined;
     const cleanPhone = phone ? normalizePhone(phone) : undefined;
     if (!cleanEmail && !cleanPhone) {
@@ -92,8 +97,17 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(password, 12);
     const user = await this.users.create(
       { email: cleanEmail, phone: cleanPhone, passwordHash },
-      ['PATIENT'],
+      asDoctor ? ['DOCTOR'] : ['PATIENT'],
     );
+    if (asDoctor) {
+      // Own profile shell so the doctor can immediately set schedule/photo.
+      // Never fails registration: admin can always create it later.
+      try {
+        await this.doctors.create({ userId: String(user._id) } as any);
+      } catch (e: any) {
+        this.logger.warn(`doctor profile auto-create failed for ${String(user._id)}: ${e?.message}`);
+      }
+    }
     const populated = await this.users.findById(String(user._id));
     const roles = this.users.roleNames(populated as any);
     const permissions = this.users.collectPermissions(populated as any);

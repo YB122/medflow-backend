@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
@@ -109,6 +109,18 @@ export class UsersService implements OnModuleInit {
       .findByIdAndUpdate(id, { roles: roles.map((r) => r._id) }, { new: true })
       .populate('roles');
     if (!user) throw new Error('user not found');
+    return user;
+  }
+
+  /** A user updates their OWN phone number (uniqueness enforced). */
+  async updatePhone(id: string, phone: string | undefined) {
+    if (!phone) throw new BadRequestException('phone is required');
+    const clean = phone.replace(/[\s\-()]/g, '');
+    if (!/^\+?[0-9]{8,15}$/.test(clean)) throw new BadRequestException('invalid phone');
+    const dup = await this.users.findOne({ phone: clean, _id: { $ne: id } });
+    if (dup) throw new ConflictException('phone already registered');
+    const user = await this.users.findByIdAndUpdate(id, { phone: clean }, { new: true }).populate('roles');
+    if (!user) throw new NotFoundException('user not found');
     return user;
   }
 

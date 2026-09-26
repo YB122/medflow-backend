@@ -34,6 +34,6 @@ export const DEFAULT_ROLES: Record<string, string[]> = {
     'report:read',
   ],
   STAFF: ['appointment:approve', 'user:read', 'doctor:verify'],
-  DOCTOR: ['appointment:approve'],
+  DOCTOR: ['appointment:approve', 'doctor:update'],
   PATIENT: ['appointment:create', 'appointment:cancel'],
 };
