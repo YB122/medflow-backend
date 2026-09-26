@@ -1,0 +1,85 @@
+{
+  "name": "medflow-backend",
+  "version": "1.0.0",
+  "description": "MedFlow backend: Auth + Users + RBAC + Doctors + Appointments + Chat + Notifications (NestJS + MongoDB + Redis + RabbitMQ + WebSocket)",
+  "license": "MIT",
+  "scripts": {
+    "build": "nest build",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --watch",
+    "test:e2e": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config test/jest-e2e.json",
+    "e2e:race": "node scripts/race-double-booking.mjs",
+    "seed:demo": "node scripts/seed-demo.mjs"
+  },
+  "dependencies": {
+    "@nestjs/common": "^12.1.0",
+    "@nestjs/config": "^12.0.1",
+    "@nestjs/core": "^12.1.0",
+    "@nestjs/jwt": "^12.0.2",
+    "@nestjs/mongoose": "^12.0.0",
+    "@nestjs/passport": "^12.0.0",
+    "@nestjs/platform-express": "^12.1.0",
+    "@nestjs/platform-socket.io": "^12.1.0",
+    "@nestjs/throttler": "^6.7.1",
+    "@nestjs/websockets": "^12.1.0",
+    "amqplib": "^2.0.1",
+    "bcryptjs": "^3.0.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "cloudinary": "^2.11.0",
+    "helmet": "^8.3.0",
+    "ioredis": "^6.0.0",
+    "mongoose": "^9.10.2",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "socket.io": "^4.8.4"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^12.0.7",
+    "@nestjs/testing": "^12.1.0",
+    "@types/amqplib": "^0.10.8",
+    "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/multer": "^2.2.0",
+    "@types/node": "^26.6.3",
+    "@types/passport-jwt": "^4.0.1",
+    "@types/supertest": "^7.2.1",
+    "jest": "^30.5.2",
+    "source-map-support": "^0.5.21",
+    "supertest": "^7.3.0",
+    "ts-jest": "^29.4.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.0"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
+    "transform": {
+      "^.+\\.tsx?$": [
+        "ts-jest",
+        {
+          "useESM": true,
+          "tsconfig": "tsconfig.spec.json"
+        }
+      ]
+    },
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
+    "testEnvironment": "node"
+  }
+}
