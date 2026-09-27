@@ -39,6 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('serverless boot failed:', e?.message ?? e);
     res.statusCode = 500;
     res.setHeader('content-type', 'application/json');
-    res.end(JSON.stringify({ error: 'backend failed to start' }));
+    // TEMPORARY: short message only (no stack) until the deploy is healthy.
+    res.end(JSON.stringify({ error: 'backend failed to start', message: String(e?.message ?? e).slice(0, 500) }));
   }
 }
