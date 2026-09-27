@@ -1,7 +1,9 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Conversation, ConversationDocument, Message, MessageDocument } from './schemas/chat.schema.js';
+import { Doctor, DoctorDocument } from '../doctors/schemas/doctor.schema.js';
+import { User, UserDocument } from '../users/schemas/user.schema.js';
 
 @Injectable()
 export class ChatService {
@@ -11,6 +13,8 @@ export class ChatService {
   constructor(
     @InjectModel(Conversation.name) private convs: Model<ConversationDocument>,
     @InjectModel(Message.name) private msgs: Model<MessageDocument>,
+    @InjectModel(Doctor.name) private doctorProfiles: Model<DoctorDocument>,
+    @InjectModel(User.name) private users: Model<UserDocument>,
   ) {}
 
   markOnline(userId: string, socketId: string) {
@@ -31,10 +35,29 @@ export class ChatService {
     return this.online.has(userId);
   }
 
+  /**
+   * Resolve anything the client pastes (doctor *profile* id or *user* id)
+   * to the account id used for membership. Unknown ids are rejected so no
+   * dead conversation (with zero members) can be created.
+   */
+  private async resolveUserId(id: string, side: 'patient' | 'doctor'): Promise<string> {
+    if (!id || !Types.ObjectId.isValid(id)) {
+      throw new BadRequestException(`invalid ${side} id`);
+    }
+    const profile = await this.doctorProfiles.findById(id).select('userId').lean().exec();
+    if (profile) return String(profile.userId);
+    const user = await this.users.findById(id).select('_id').lean().exec();
+    if (!user) throw new NotFoundException(`${side} not found`);
+    return String((user as any)._id);
+  }
+
   async getOrCreate(patientId: string, doctorId: string) {
-    const existing = await this.convs.findOne({ patientId, doctorId });
+    const pid = await this.resolveUserId(patientId, 'patient');
+    const did = await this.resolveUserId(doctorId, 'doctor');
+    if (pid === did) throw new BadRequestException('cannot chat with yourself');
+    const existing = await this.convs.findOne({ patientId: pid, doctorId: did });
     if (existing) return existing;
-    return this.convs.create({ patientId, doctorId });
+    return this.convs.create({ patientId: pid, doctorId: did });
   }
 
   async assertMember(conversationId: string, userId: string) {
