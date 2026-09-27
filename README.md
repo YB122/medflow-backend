@@ -1,17 +1,17 @@
 # MedFlow backend — appointment & clinic platform API
 
-NestJS + TypeScript + MongoDB + Redis + RabbitMQ + WebSocket. Full MedFlow slice:
+NestJS + TypeScript + MongoDB + Redis + WebSocket. Full MedFlow slice:
 Auth + Users + RBAC, Doctors + schedules + reviews, Appointments with
 anti-double-booking, Medical records + prescriptions, Notifications + reminders,
 Chat (WebSocket), Payments stub, Admin dashboard/reports.
 
-شرح مختصر (Mixed): الـ `access token` قصير (15m) وفيه `roles` + `permissions`. الـ `refresh token` طويل (7d) ومتخزن في Redis كـ allowlist عشان `logout` و `rotation` يقدروا يلغوه. كل route محمي بـ JWT by default وتفتح بـ `@Public()`. الصلاحيات بتتcheck بـ `RolesGuard` (أي role يكفي) + `PermissionsGuard` (لازم كل permissions). الحجز لا ينتظر الإيميل: `EventsService` ينشر `appointment.*` على RabbitMQ (أو in-memory fallback) والـ consumers (notifications + mail) تشتغل async. منع الحجز المزدوج بمستويين: check قبل الإنشاء + `unique` partial index على `(doctorId, date, start)` للحالات `PENDING/CONFIRMED` — أي race تتحول لـ `409`.
+شرح مختصر (Mixed): الـ `access token` قصير (15m) وفيه `roles` + `permissions`. الـ `refresh token` طويل (7d) ومتخزن في Redis كـ allowlist عشان `logout` و `rotation` يقدروا يلغوه. كل route محمي بـ JWT by default وتفتح بـ `@Public()`. الصلاحيات بتتcheck بـ `RolesGuard` (أي role يكفي) + `PermissionsGuard` (لازم كل permissions). الحجز لا ينتظر الإيميل: `EventsService` حافلة in-memory تنشر `appointment.*` والـ consumers (notifications + mail) تشتغل async. منع الحجز المزدوج بمستويين: check قبل الإنشاء + `unique` partial index على `(doctorId, date, start)` للحالات `PENDING/CONFIRMED` — أي race تتحول لـ `409`.
 
 ## Quickstart
 
 ```bash
 cp .env.example .env
-docker compose -f docker-compose.infra.yml up -d   # mongo + redis + rabbitmq
+docker compose -f docker-compose.infra.yml up -d   # mongo + redis
 npm install
 npm run start:dev
 # seed demo data (specialties, clinic, doctor + schedule)
@@ -79,7 +79,7 @@ list() { ... }
 
 ## Events / mail / reminders
 
-- `EventsService`: exchange `medflow.appointments` (topic), keys `appointment.booked|approved|cancelled`. Falls back to in-memory when `RABBITMQ_URL` is unset.
+- `EventsService`: in-memory bus, keys `appointment.booked|approved|cancelled`.
 - `MailService`: logs in dev; sends via nodemailer when `SMTP_HOST` is set (optional peer, never blocks booking).
 - `RemindersService`: every 10 min notifies patients+doctors about tomorrow's PENDING/CONFIRMED appointments (`DISABLE_REMINDERS=1` to turn off).
 

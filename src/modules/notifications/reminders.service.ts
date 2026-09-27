@@ -9,7 +9,7 @@ import { NotificationType } from './schemas/notification.schema.js';
  * Appointment reminders: every 10 minutes, notify patients + doctors
  * about CONFIRMED/PENDING appointments happening tomorrow.
  * Dedupes within process memory (reminded:<appointmentId>:<date>).
- * Runs in-process so booking never waits; RabbitMQ consumers can
+ * Runs in-process so booking never waits; a dedicated worker can
  * replace this later without changing the API.
  */
 @Injectable()

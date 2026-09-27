@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 
 /**
  * Email skeleton. In prod plug nodemailer/SES here and consume
- * appointment.* events from RabbitMQ. Never blocks booking:
+ * appointment.* events from the in-memory bus. Never blocks booking:
  * failures are logged, not thrown.
  */
 @Injectable()
