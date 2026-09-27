@@ -202,8 +202,8 @@ export class DoctorsService {
   }
 
   // ---------- Specialties & clinics ----------
-  createSpecialty(name: string, description = '') {
-    return this.specialties.create({ name, description });
+  createSpecialty(name: string, description = '', nameAr = '') {
+    return this.specialties.create({ name, description, nameAr });
   }
   listSpecialties() {
     return this.specialties.find().sort({ name: 1 }).lean().exec();

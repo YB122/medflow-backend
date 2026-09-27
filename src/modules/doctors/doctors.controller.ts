@@ -173,8 +173,8 @@ export class DoctorsController {
   @Post('specialties')
   @Roles('ADMIN', 'SUPER_ADMIN')
   @RequirePermissions('specialty:manage')
-  createSpecialty(@Body() body: { name: string; description?: string }) {
-    return this.doctors.createSpecialty(body.name, body.description ?? '');
+  createSpecialty(@Body() body: { name: string; description?: string; nameAr?: string }) {
+    return this.doctors.createSpecialty(body.name, body.description ?? '', body.nameAr ?? '');
   }
 
   @Public()
