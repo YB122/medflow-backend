@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "MedFlow backend: Auth + Users + RBAC + Doctors + Appointments + Chat + Notifications (NestJS + MongoDB + Redis + WebSocket)",
   "license": "MIT",
+  "type": "module",
   "engines": {
     "node": "22.x"
   },

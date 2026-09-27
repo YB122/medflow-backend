@@ -4,3 +4,5 @@ dist/
 coverage/
 *.tsbuildinfo
 .mongo-data/
+dev*.log
+boot*.log

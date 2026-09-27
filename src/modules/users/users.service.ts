@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import * as bcrypt from 'bcryptjs';
+import bcrypt from 'bcryptjs';
 import { User, UserDocument, UserStatus } from './schemas/user.schema.js';
 import { Role, RoleDocument } from './schemas/role.schema.js';
 import { DEFAULT_ROLES } from './roles.seed.js';

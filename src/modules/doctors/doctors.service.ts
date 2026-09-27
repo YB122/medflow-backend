@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import * as bcrypt from 'bcryptjs';
+import bcrypt from 'bcryptjs';
 import { Doctor, DoctorDocument } from './schemas/doctor.schema.js';
 import { Specialty, SpecialtyDocument } from './schemas/specialty.schema.js';
 import { Clinic, ClinicDocument } from './schemas/clinic.schema.js';
