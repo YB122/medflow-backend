@@ -66,7 +66,8 @@ export class DoctorsService {
 
   async getProfile(id: string): Promise<any> {    const doctor = await this.doctors
       .findById(id)
-      .populate('specialtyId clinicId userId')
+      .populate('specialtyId clinicId')
+      .populate({ path: 'userId', select: 'photoUrl' })
       .lean()
       .exec();
     if (!doctor) throw new NotFoundException('doctor not found');
