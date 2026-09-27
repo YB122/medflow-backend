@@ -31,7 +31,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       configureApp(app);
       await app.init();
       const expressApp = app.getHttpAdapter().getInstance();
-      cachedHandler = serverlessMod.default({ app: expressApp });
+      // NOTE: `as any` — @vendia/serverless-express CJS types expose no
+      // callable default under NodeNext; runtime default export is the factory.
+      cachedHandler = (serverlessMod as any).default({ app: expressApp });
     }
     return cachedHandler!(req, res);
   } catch (e: any) {

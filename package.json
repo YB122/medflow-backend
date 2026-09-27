@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "nest build",
+    "typecheck:api": "tsc --ignoreConfig --noEmit --module nodenext --moduleResolution nodenext --target es2022 --esModuleInterop --skipLibCheck --experimentalDecorators --emitDecoratorMetadata --types node api/index.ts",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
