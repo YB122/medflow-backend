@@ -1,12 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { NestFactory } from '@nestjs/core';
-import serverlessExpress from '@vendia/serverless-express';
-import { AppModule } from '../src/app.module.js';
-import { configureApp } from '../src/app.factory.js';
 
 /**
  * Vercel serverless entry — same app as `src/main.ts`, warmed once per
  * function instance and reused across invocations.
+ *
+ * All imports are lazy (inside the handler) so that even a module-load
+ * failure is caught below and returned as JSON instead of a blind
+ * FUNCTION_INVOCATION_FAILED.
  *
  * NOTE: serverless functions have no sticky long-lived connections, so the
  * `/chat` WebSocket gateway does not work here. REST + auth + everything
@@ -15,22 +15,26 @@ import { configureApp } from '../src/app.factory.js';
  */
 let cachedHandler: ((req: any, res: any) => Promise<void>) | null = null;
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  configureApp(app);
-  await app.init();
-  const expressApp = app.getHttpAdapter().getInstance();
-  cachedHandler = serverlessExpress({ app: expressApp });
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    if (!cachedHandler) await bootstrap();
+    if (!cachedHandler) {
+      const [{ NestFactory }, { AppModule }, { configureApp }, serverlessMod] = await Promise.all([
+        import('@nestjs/core'),
+        import('../src/app.module.js'),
+        import('../src/app.factory.js'),
+        import('@vendia/serverless-express'),
+      ]);
+      const app = await NestFactory.create(AppModule);
+      configureApp(app);
+      await app.init();
+      const expressApp = app.getHttpAdapter().getInstance();
+      cachedHandler = serverlessMod.default({ app: expressApp });
+    }
     return cachedHandler!(req, res);
   } catch (e: any) {
     // TEMPORARY boot diagnostics — remove once the deploy is healthy.
     res.statusCode = 500;
     res.setHeader('content-type', 'application/json');
-    res.end(JSON.stringify({ bootError: String(e?.stack ?? e) }));
+    res.end(JSON.stringify({ bootError: String(e?.stack ?? e).slice(0, 2000) }));
   }
 }
