@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard } from './common/guards/throttle.guard.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { DoctorsModule } from './modules/doctors/doctors.module.js';
@@ -20,8 +20,6 @@ import { HealthController } from './modules/health/health.controller.js';
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: ['.env'] }),
     MongooseModule.forRoot(process.env.MONGODB_URI ?? 'mongodb://localhost:27017/medflow'),
-    // Global rate limit: 100 req / 60s per IP. Login has stricter limit below.
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     RedisModule,
     EventsModule,
     UsersModule,

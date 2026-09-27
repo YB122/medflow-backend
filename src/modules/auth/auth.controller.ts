@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
+import { Throttle } from '../../common/guards/throttle.guard.js';
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
