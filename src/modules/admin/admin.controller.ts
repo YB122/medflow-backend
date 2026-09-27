@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from '../users/schemas/user.schema.js';
@@ -81,5 +81,28 @@ export class AdminController {
         { $limit: 10 },
       ])
       .exec();
+  }
+
+  /**
+   * Doctor list for verification, including account contact (email/phone).
+   * Admin-only: the public /doctors search never exposes contact info.
+   */
+  @Get('doctors')
+  async listDoctors(@Query('page') page = '1', @Query('limit') limit = '20') {
+    const safePage = Math.max(1, Number(page) || 1);
+    const safeLimit = Math.min(100, Math.max(1, Number(limit) || 20));
+    const [items, total] = await Promise.all([
+      this.doctors
+        .find()
+        .populate('specialtyId clinicId')
+        .populate({ path: 'userId', select: 'email phone photoUrl' })
+        .skip((safePage - 1) * safeLimit)
+        .limit(safeLimit)
+        .sort({ createdAt: -1 })
+        .lean()
+        .exec(),
+      this.doctors.countDocuments(),
+    ]);
+    return { items, total, page: safePage, limit: safeLimit };
   }
 }
