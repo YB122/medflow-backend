@@ -35,9 +35,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     return cachedHandler!(req, res);
   } catch (e: any) {
-    // TEMPORARY boot diagnostics — remove once the deploy is healthy.
+    // eslint-disable-next-line no-console
+    console.error('serverless boot failed:', e?.message ?? e);
     res.statusCode = 500;
     res.setHeader('content-type', 'application/json');
-    res.end(JSON.stringify({ marker: 'diag-v3', bootError: String(e?.stack ?? e).slice(0, 2000) }));
+    res.end(JSON.stringify({ error: 'backend failed to start' }));
   }
 }
