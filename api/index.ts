@@ -8,34 +8,28 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
  * failure is caught below and returned as JSON instead of a blind
  * FUNCTION_INVOCATION_FAILED.
  *
+ * No adapter library: an Express app IS a (req, res) listener, so Vercel's
+ * Node runtime invokes it directly after `app.init()`.
+ *
  * NOTE: serverless functions have no sticky long-lived connections, so the
  * `/chat` WebSocket gateway does not work here. REST + auth + everything
  * else works. If you need live chat in production, host the backend on
  * Render / Railway / Fly instead and point the frontend at it.
  */
-let cachedHandler: ((req: any, res: any) => Promise<void>) | null = null;
-
-// NOTE: function Node version comes from package.json `engines` (22.x),
-// which supports require(esm) for the ESM Nest packages.
+let expressApp: ((req: any, res: any) => void) | null = null;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    if (!cachedHandler) {
-      const [{ NestFactory }, { AppModule }, { configureApp }, serverlessMod] = await Promise.all([
-        import('@nestjs/core'),
-        import('../src/app.module.js'),
-        import('../src/app.factory.js'),
-        import('@vendia/serverless-express'),
-      ]);
+    if (!expressApp) {
+      const { NestFactory } = await import('@nestjs/core');
+      const { AppModule } = await import('../src/app.module.js');
+      const { configureApp } = await import('../src/app.factory.js');
       const app = await NestFactory.create(AppModule);
       configureApp(app);
       await app.init();
-      const expressApp = app.getHttpAdapter().getInstance();
-      // NOTE: `as any` — @vendia/serverless-express CJS types expose no
-      // callable default under NodeNext; runtime default export is the factory.
-      cachedHandler = (serverlessMod as any).default({ app: expressApp });
+      expressApp = app.getHttpAdapter().getInstance();
     }
-    return cachedHandler!(req, res);
+    return (expressApp as any)(req, res);
   } catch (e: any) {
     // eslint-disable-next-line no-console
     console.error('serverless boot failed:', e?.message ?? e);

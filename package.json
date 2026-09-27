@@ -31,7 +31,6 @@
     "@nestjs/platform-express": "^12.1.0",
     "@nestjs/platform-socket.io": "^12.1.0",
     "@nestjs/websockets": "^12.1.0",
-    "@vendia/serverless-express": "^4.12.6",
     "bcryptjs": "^3.0.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
