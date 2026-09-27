@@ -59,6 +59,12 @@ export class UpdateDoctorDto {
   @Min(-90)
   @Max(90)
   lat?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(80)
+  yearsOfExperience?: number;
 }
 
 export class CreateReviewDto {

@@ -41,6 +41,10 @@ export class Doctor {
   @Prop()
   lat?: number;
 
+  /** Years of professional experience (shown on the doctor's public page). */
+  @Prop({ min: 0, max: 80 })
+  yearsOfExperience?: number;
+
   @Prop({ default: 0, min: 0, max: 5 })
   ratingAvg!: number;
 
