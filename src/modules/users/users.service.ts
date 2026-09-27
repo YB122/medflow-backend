@@ -114,14 +114,30 @@ export class UsersService implements OnModuleInit {
     return user;
   }
 
-  /** A user updates their OWN phone number (uniqueness enforced). */
-  async updatePhone(id: string, phone: string | undefined) {
-    if (!phone) throw new BadRequestException('phone is required');
-    const clean = phone.replace(/[\s\-()]/g, '');
-    if (!/^\+?[0-9]{8,15}$/.test(clean)) throw new BadRequestException('invalid phone');
-    const dup = await this.users.findOne({ phone: clean, _id: { $ne: id } });
-    if (dup) throw new ConflictException('phone already registered');
-    const user = await this.users.findByIdAndUpdate(id, { phone: clean }, { new: true }).populate('roles');
+  /** A user updates their OWN profile (phone and/or personal bio). */
+  async updateMe(id: string, input: { phone?: string; bio?: string }) {
+    const set: any = {};
+    const unset: any = {};
+    if (input.phone !== undefined) {
+      const clean = input.phone.replace(/[\s\-()]/g, '');
+      if (!clean) {
+        unset.phone = 1;
+      } else {
+        if (!/^\+?[0-9]{8,15}$/.test(clean)) throw new BadRequestException('invalid phone');
+        const dup = await this.users.findOne({ phone: clean, _id: { $ne: id } });
+        if (dup) throw new ConflictException('phone already registered');
+        set.phone = clean;
+      }
+    }
+    if (input.bio !== undefined) {
+      set.bio = input.bio.trim().slice(0, 500);
+    }
+    if (Object.keys(set).length === 0 && Object.keys(unset).length === 0) {
+      throw new BadRequestException('nothing to update');
+    }
+    const user = await this.users
+      .findByIdAndUpdate(id, { $set: set, $unset: unset }, { new: true })
+      .populate('roles');
     if (!user) throw new NotFoundException('user not found');
     return user;
   }

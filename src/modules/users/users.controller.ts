@@ -20,11 +20,11 @@ export class UsersController {
     return this.users.list(Number(page), Number(limit));
   }
 
-  /** Update your OWN phone number (no admin permission needed). */
+  /** Update your OWN profile: phone and/or personal bio (no admin permission needed). */
   @Patch('me')
   @Roles('PATIENT', 'DOCTOR', 'ADMIN', 'SUPER_ADMIN', 'STAFF')
-  updateMe(@CurrentUser() user: AuthUser, @Body() body: { phone?: string }) {
-    return this.users.updatePhone(user.sub, body.phone);
+  updateMe(@CurrentUser() user: AuthUser, @Body() body: { phone?: string; bio?: string }) {
+    return this.users.updateMe(user.sub, body);
   }
 
   /**

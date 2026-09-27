@@ -35,6 +35,10 @@ export class User {
   /** Cloudinary URL of the user's profile photo (all roles). */
   @Prop({ default: '' })
   photoUrl!: string;
+
+  /** Personal bio about yourself (all roles; doctors also have a professional bio). */
+  @Prop({ default: '', maxlength: 500 })
+  bio!: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
