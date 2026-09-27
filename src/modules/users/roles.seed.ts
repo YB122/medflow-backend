@@ -10,6 +10,7 @@ export const PERMISSIONS = {
   APPOINTMENT_CREATE: 'appointment:create',
   APPOINTMENT_CANCEL: 'appointment:cancel',
   APPOINTMENT_APPROVE: 'appointment:approve',
+  STAFF_MANAGE: 'staff:manage',
   USER_READ: 'user:read',
   USER_UPDATE: 'user:update',
   ROLE_ASSIGN: 'role:assign',
@@ -32,8 +33,9 @@ export const DEFAULT_ROLES: Record<string, string[]> = {
     'specialty:manage',
     'clinic:manage',
     'report:read',
+    'staff:manage',
   ],
   STAFF: ['appointment:approve', 'user:read', 'doctor:verify'],
-  DOCTOR: ['appointment:approve', 'doctor:update'],
+  DOCTOR: ['appointment:approve', 'doctor:update', 'staff:manage'],
   PATIENT: ['appointment:create', 'appointment:cancel'],
 };

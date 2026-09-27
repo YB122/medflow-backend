@@ -36,6 +36,11 @@ export class AppointmentsController {
       // In v1 doctorId === user doctor profile id passed explicitly; fallback to own appointments
       return this.appts.historyForDoctor(user.sub, Number(page), Number(limit), status);
     }
+    const isAdmin = user.roles.some((r) => ['ADMIN', 'SUPER_ADMIN'].includes(r));
+    if (user.roles.includes('STAFF') && !isAdmin) {
+      // Staff see appointments of every clinic employing them.
+      return this.appts.historyForStaff(user.sub, Number(page), Number(limit), status);
+    }
     return this.appts.historyForPatient(user.sub, Number(page), Number(limit), status);
   }
 

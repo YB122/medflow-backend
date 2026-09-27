@@ -6,12 +6,14 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import * as bcrypt from 'bcryptjs';
 import { Doctor, DoctorDocument } from './schemas/doctor.schema.js';
 import { Specialty, SpecialtyDocument } from './schemas/specialty.schema.js';
 import { Clinic, ClinicDocument } from './schemas/clinic.schema.js';
 import { Review, ReviewDocument } from './schemas/review.schema.js';
 import { Schedule, ScheduleDocument } from '../schedules/schemas/schedule.schema.js';
 import { Appointment, AppointmentDocument } from '../appointments/schemas/appointment.schema.js';
+import { UsersService } from '../users/users.service.js';
 import { RedisService } from '../../infra/redis/redis.service.js';
 import { CloudinaryService } from '../../infra/cloudinary/cloudinary.service.js';
 
@@ -26,6 +28,7 @@ export class DoctorsService {
     @InjectModel(Appointment.name) private appts: Model<AppointmentDocument>,
     private readonly redis: RedisService,
     private readonly cloudinary: CloudinaryService,
+    private readonly users: UsersService,
   ) {}
 
   // ---------- Search with filters + Redis cache for plain list ----------
@@ -139,6 +142,76 @@ export class DoctorsService {
       ])
       .exec();
     return rows.map((r: any) => ({ ...r, patientId: String(r.patientId) }));
+  }
+
+  /** Resolve the acting doctor profile: explicit id (admin) or own profile. */
+  private async resolveOwnProfile(userId: string, explicitDoctorId?: string) {
+    if (explicitDoctorId) {
+      if (!Types.ObjectId.isValid(explicitDoctorId)) throw new BadRequestException('invalid doctor id');
+      const byId = await this.doctors.findById(explicitDoctorId);
+      if (!byId) throw new NotFoundException('doctor not found');
+      return byId;
+    }
+    const own = await this.doctors.findOne({ userId });
+    if (!own) throw new NotFoundException('doctor profile not found');
+    return own;
+  }
+
+  /**
+   * Doctor hires staff for their own clinic. Creates a STAFF user, or
+   * upgrades + links an existing account by email.
+   */
+  async addStaff(doctorUserId: string, email: string, password: string, explicitDoctorId?: string) {
+    const profile = await this.resolveOwnProfile(doctorUserId, explicitDoctorId);
+    const cleanEmail = email?.trim().toLowerCase() ?? '';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) throw new BadRequestException('invalid email');
+    if (!password || password.length < 8) {
+      throw new BadRequestException('password must be 8+ characters');
+    }
+    let user = await this.users.findByEmailWithSecret(cleanEmail);
+    if (!user) {
+      const passwordHash = await bcrypt.hash(password, 12);
+      user = await this.users.create({ email: cleanEmail, passwordHash }, ['STAFF']);
+    } else {
+      const names = this.users.roleNames(user as any);
+      if (!names.includes('STAFF')) {
+        await this.users.setRoles(String(user._id), [...new Set([...names, 'STAFF'])]);
+      }
+    }
+    await this.doctors.updateOne({ _id: profile._id }, { $addToSet: { staffIds: user._id } });
+    return { id: String(user._id), email: user.email, status: user.status };
+  }
+
+  /** Staff linked to the doctor's own clinic. */
+  async listStaff(doctorUserId: string, explicitDoctorId?: string) {
+    const profile = await this.resolveOwnProfile(doctorUserId, explicitDoctorId);
+    const full = await this.doctors
+      .findById(profile._id)
+      .populate({ path: 'staffIds', select: 'email status createdAt' })
+      .lean()
+      .exec();
+    return ((full?.staffIds ?? []) as any[]).map((u: any) => ({
+      id: String(u._id),
+      email: u.email,
+      status: u.status,
+      createdAt: u.createdAt,
+    }));
+  }
+
+  /** Remove staff from the clinic; demote to PATIENT if no other doctor employs them. */
+  async removeStaff(doctorUserId: string, staffUserId: string, explicitDoctorId?: string) {
+    if (!Types.ObjectId.isValid(staffUserId)) throw new BadRequestException('invalid user id');
+    const profile = await this.resolveOwnProfile(doctorUserId, explicitDoctorId);
+    await this.doctors.updateOne({ _id: profile._id }, { $pull: { staffIds: staffUserId } });
+    const stillEmployed = await this.doctors.countDocuments({ staffIds: staffUserId });
+    if (stillEmployed === 0) {
+      const u = await this.users.findById(staffUserId);
+      if (u) {
+        const names = this.users.roleNames(u as any).filter((n) => n !== 'STAFF');
+        await this.users.setRoles(staffUserId, names.length ? names : ['PATIENT']);
+      }
+    }
+    return { ok: true };
   }
 
   async create(data: Partial<Doctor>) {

@@ -45,6 +45,10 @@ export class Doctor {
   @Prop({ min: 0, max: 80 })
   yearsOfExperience?: number;
 
+  /** Staff (receptionists) hired by this doctor — scoped appointment access. */
+  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: User.name }], default: [] })
+  staffIds!: mongoose.Types.ObjectId[];
+
   @Prop({ default: 0, min: 0, max: 5 })
   ratingAvg!: number;
 

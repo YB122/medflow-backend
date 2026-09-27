@@ -9,6 +9,7 @@ import { Appointment, AppointmentSchema } from '../appointments/schemas/appointm
 import { DoctorsService } from './doctors.service.js';
 import { DoctorsController } from './doctors.controller.js';
 import { CloudinaryModule } from '../../infra/cloudinary/cloudinary.module.js';
+import { UsersModule } from '../users/users.module.js';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { CloudinaryModule } from '../../infra/cloudinary/cloudinary.module.js';
       { name: Appointment.name, schema: AppointmentSchema },
     ]),
     CloudinaryModule,
+    UsersModule,
   ],
   controllers: [DoctorsController],
   providers: [DoctorsService],

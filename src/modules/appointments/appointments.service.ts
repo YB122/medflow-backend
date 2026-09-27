@@ -197,6 +197,14 @@ export class AppointmentsService {
     return this.paginate({ doctorId: resolved }, page, limit, status);
   }
 
+  /** Appointments across every clinic employing this staff user. */
+  async historyForStaff(userId: string, page = 1, limit = 20, status?: string) {
+    if (!Types.ObjectId.isValid(userId)) return { items: [], total: 0, page, limit };
+    const profiles = await this.doctorProfiles.find({ staffIds: userId }).select('_id').lean().exec();
+    const ids = profiles.map((p) => String((p as any)._id));
+    return this.paginate({ doctorId: { $in: ids } }, page, limit, status);
+  }
+
   async getById(id: string) {
     const appt = await this.appts.findById(id).lean().exec();
     if (!appt) throw new NotFoundException('appointment not found');

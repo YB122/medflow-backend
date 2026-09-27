@@ -61,6 +61,43 @@ export class DoctorsController {
     return this.doctors.myPatients(user.sub, isAdmin ? doctorId : undefined);
   }
 
+  /**
+   * Doctor hires staff for their own clinic (admins may pass doctorId in body).
+   * Body: { email, password } — creates a STAFF user, or upgrades + links an existing one.
+   */
+  @Post('doctors/me/staff')
+  @Roles('DOCTOR', 'ADMIN', 'SUPER_ADMIN')
+  @RequirePermissions('staff:manage')
+  addStaff(
+    @CurrentUser() user: AuthUser,
+    @Body() body: { email: string; password: string; doctorId?: string },
+  ) {
+    const isAdmin = user.roles.some((r) => ['ADMIN', 'SUPER_ADMIN'].includes(r));
+    return this.doctors.addStaff(user.sub, body.email, body.password ?? '', isAdmin ? body.doctorId : undefined);
+  }
+
+  /** Staff linked to the doctor's own clinic. */
+  @Get('doctors/me/staff')
+  @Roles('DOCTOR', 'ADMIN', 'SUPER_ADMIN')
+  @RequirePermissions('staff:manage')
+  listStaff(@CurrentUser() user: AuthUser, @Query('doctorId') doctorId?: string) {
+    const isAdmin = user.roles.some((r) => ['ADMIN', 'SUPER_ADMIN'].includes(r));
+    return this.doctors.listStaff(user.sub, isAdmin ? doctorId : undefined);
+  }
+
+  /** Remove staff from the clinic (demotes to PATIENT when unemployed elsewhere). */
+  @Delete('doctors/me/staff/:userId')
+  @Roles('DOCTOR', 'ADMIN', 'SUPER_ADMIN')
+  @RequirePermissions('staff:manage')
+  removeStaff(
+    @CurrentUser() user: AuthUser,
+    @Param('userId') userId: string,
+    @Query('doctorId') doctorId?: string,
+  ) {
+    const isAdmin = user.roles.some((r) => ['ADMIN', 'SUPER_ADMIN'].includes(r));
+    return this.doctors.removeStaff(user.sub, userId, isAdmin ? doctorId : undefined);
+  }
+
   @Public()
   @Get('doctors/:id')
   profile(@Param('id') id: string): Promise<any> {
