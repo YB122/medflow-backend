@@ -24,6 +24,13 @@ async function bootstrap() {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!cachedHandler) await bootstrap();
-  return cachedHandler!(req, res);
+  try {
+    if (!cachedHandler) await bootstrap();
+    return cachedHandler!(req, res);
+  } catch (e: any) {
+    // TEMPORARY boot diagnostics — remove once the deploy is healthy.
+    res.statusCode = 500;
+    res.setHeader('content-type', 'application/json');
+    res.end(JSON.stringify({ bootError: String(e?.stack ?? e) }));
+  }
 }
