@@ -31,6 +31,10 @@ export class User {
 
   @Prop({ enum: UserStatus, default: UserStatus.ACTIVE })
   status!: UserStatus;
+
+  /** Cloudinary URL of the user's profile photo (all roles). */
+  @Prop({ default: '' })
+  photoUrl!: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

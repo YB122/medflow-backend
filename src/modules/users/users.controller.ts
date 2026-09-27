@@ -1,4 +1,6 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { UsersService } from './users.service.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 import { RequirePermissions } from '../../common/decorators/permissions.decorator.js';
@@ -23,6 +25,29 @@ export class UsersController {
   @Roles('PATIENT', 'DOCTOR', 'ADMIN', 'SUPER_ADMIN', 'STAFF')
   updateMe(@CurrentUser() user: AuthUser, @Body() body: { phone?: string }) {
     return this.users.updatePhone(user.sub, body.phone);
+  }
+
+  /**
+   * Upload your OWN profile photo → Cloudinary (600x600 face-crop).
+   * Multipart field name: `photo` (image/*, max 5MB). All roles.
+   */
+  @Post('me/photo')
+  @Roles('PATIENT', 'DOCTOR', 'ADMIN', 'SUPER_ADMIN', 'STAFF')
+  @UseInterceptors(
+    FileInterceptor('photo', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        if (!file.mimetype.startsWith('image/')) {
+          return cb(new BadRequestException('only image files are allowed'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  uploadMyPhoto(@CurrentUser() user: AuthUser, @UploadedFile() file?: Express.Multer.File) {
+    if (!file) throw new BadRequestException('photo file is required (field: photo)');
+    return this.users.updatePhoto(user.sub, { buffer: file.buffer, mimetype: file.mimetype });
   }
 
   /** Suspend / reactivate a user account. */

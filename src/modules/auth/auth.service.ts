@@ -185,6 +185,7 @@ export class AuthService {
       id: String(user._id),
       email: user.email ?? null,
       phone: (user as any).phone ?? null,
+      photoUrl: (user as any).photoUrl ?? null,
       status: user.status,
       roles: this.users.roleNames(user as any),
       permissions: this.users.collectPermissions(user as any),

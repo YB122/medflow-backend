@@ -4,6 +4,7 @@ import { User, UserSchema } from './schemas/user.schema.js';
 import { Role, RoleSchema } from './schemas/role.schema.js';
 import { UsersService } from './users.service.js';
 import { UsersController } from './users.controller.js';
+import { CloudinaryModule } from '../../infra/cloudinary/cloudinary.module.js';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { UsersController } from './users.controller.js';
       { name: User.name, schema: UserSchema },
       { name: Role.name, schema: RoleSchema },
     ]),
+    CloudinaryModule,
   ],
   controllers: [UsersController],
   providers: [UsersService],

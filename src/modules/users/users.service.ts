@@ -5,6 +5,7 @@ import * as bcrypt from 'bcryptjs';
 import { User, UserDocument, UserStatus } from './schemas/user.schema.js';
 import { Role, RoleDocument } from './schemas/role.schema.js';
 import { DEFAULT_ROLES } from './roles.seed.js';
+import { CloudinaryService } from '../../infra/cloudinary/cloudinary.service.js';
 
 @Injectable()
 export class UsersService implements OnModuleInit {
@@ -13,6 +14,7 @@ export class UsersService implements OnModuleInit {
   constructor(
     @InjectModel(User.name) private users: Model<UserDocument>,
     @InjectModel(Role.name) private roles: Model<RoleDocument>,
+    private readonly cloudinary: CloudinaryService,
   ) {}
 
   /** Seed roles + default super admin on boot (idempotent). */
@@ -120,6 +122,14 @@ export class UsersService implements OnModuleInit {
     const dup = await this.users.findOne({ phone: clean, _id: { $ne: id } });
     if (dup) throw new ConflictException('phone already registered');
     const user = await this.users.findByIdAndUpdate(id, { phone: clean }, { new: true }).populate('roles');
+    if (!user) throw new NotFoundException('user not found');
+    return user;
+  }
+
+  /** A user uploads their OWN profile photo (Cloudinary, all roles). */
+  async updatePhoto(id: string, file: { buffer: Buffer; mimetype: string }) {
+    const photoUrl = await this.cloudinary.uploadImage(file.buffer, file.mimetype, 'medflow/users');
+    const user = await this.users.findByIdAndUpdate(id, { photoUrl }, { new: true }).populate('roles');
     if (!user) throw new NotFoundException('user not found');
     return user;
   }
