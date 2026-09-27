@@ -12,7 +12,9 @@ import { PermissionsGuard } from './common/guards/permissions.guard.js';
  */
 export function configureApp(app: INestApplication): void {
   // Security headers (OWASP) + CORS
-  app.use(helmet());
+  // NOTE: `as any` — helmet's .d.cts types expose no callable default under
+  // NodeNext; at runtime the ESM entry's default export is the middleware.
+  app.use((helmet as any)());
   app.enableCors({
     origin: (process.env.CORS_ORIGIN ?? 'http://localhost:3001').split(','),
     credentials: true,
