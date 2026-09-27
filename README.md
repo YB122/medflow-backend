@@ -11,7 +11,7 @@ Chat (WebSocket), Payments stub, Admin dashboard/reports.
 
 ```bash
 cp .env.example .env
-docker compose -f docker-compose.infra.yml up -d   # mongo + redis
+# Make sure MongoDB + Redis are running (Atlas/Upstash or local services)
 npm install
 npm run start:dev
 # seed demo data (specialties, clinic, doctor + schedule)
