@@ -38,6 +38,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // TEMPORARY boot diagnostics — remove once the deploy is healthy.
     res.statusCode = 500;
     res.setHeader('content-type', 'application/json');
-    res.end(JSON.stringify({ bootError: String(e?.stack ?? e).slice(0, 2000) }));
+    res.end(JSON.stringify({ marker: 'diag-v3', bootError: String(e?.stack ?? e).slice(0, 2000) }));
   }
 }
