@@ -173,8 +173,19 @@ export class DoctorsController {
   @Post('specialties')
   @Roles('ADMIN', 'SUPER_ADMIN')
   @RequirePermissions('specialty:manage')
-  createSpecialty(@Body() body: { name: string; description?: string; nameAr?: string }) {
-    return this.doctors.createSpecialty(body.name, body.description ?? '', body.nameAr ?? '');
+  createSpecialty(@Body() body: { name: string; description?: string; nameAr?: string; descriptionAr?: string }) {
+    return this.doctors.createSpecialty(body.name, body.description ?? '', body.nameAr ?? '', body.descriptionAr ?? '');
+  }
+
+  /** Edit specialty names/descriptions (used to attach bilingual content to existing rows). */
+  @Patch('specialties/:id')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @RequirePermissions('specialty:manage')
+  updateSpecialty(
+    @Param('id') id: string,
+    @Body() body: { name?: string; nameAr?: string; description?: string; descriptionAr?: string },
+  ) {
+    return this.doctors.updateSpecialty(id, body);
   }
 
   @Public()

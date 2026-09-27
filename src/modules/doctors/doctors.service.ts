@@ -202,8 +202,14 @@ export class DoctorsService {
   }
 
   // ---------- Specialties & clinics ----------
-  createSpecialty(name: string, description = '', nameAr = '') {
-    return this.specialties.create({ name, description, nameAr });
+  createSpecialty(name: string, description = '', nameAr = '', descriptionAr = '') {
+    return this.specialties.create({ name, description, nameAr, descriptionAr });
+  }
+  updateSpecialty(id: string, data: { name?: string; nameAr?: string; description?: string; descriptionAr?: string }) {
+    return this.specialties.findByIdAndUpdate(id, data, { new: true }).then((s) => {
+      if (!s) throw new NotFoundException('specialty not found');
+      return s;
+    });
   }
   listSpecialties() {
     return this.specialties.find().sort({ name: 1 }).lean().exec();

@@ -15,6 +15,10 @@ export class Specialty {
 
   @Prop({ default: '' })
   description!: string;
+
+  /** Arabic description. Falls back to `description` when empty. */
+  @Prop({ default: '' })
+  descriptionAr!: string;
 }
 
 export const SpecialtySchema = SchemaFactory.createForClass(Specialty);

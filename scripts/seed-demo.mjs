@@ -3,7 +3,7 @@
  *   npm run start:dev     # terminal 1
  *   npm run seed:demo     # terminal 2
  *
- * Creates: 2 specialties, 1 clinic, 1 demo doctor profile + weekly schedule.
+ * Creates: 8 bilingual specialties, 1 clinic, 1 demo doctor profile + weekly schedule.
  * Idempotent-ish: skips creation when list endpoints already return data.
  */
 const BASE = process.env.API_BASE ?? 'http://localhost:3000/api/v1';
@@ -38,9 +38,54 @@ async function main() {
   const specs = await req('GET', '/specialties', token);
   if (Array.isArray(specs.data) && specs.data.length === 0) {
     for (const s of [
-      { name: 'Cardiology', description: 'Heart and vascular care' },
-      { name: 'Dermatology', description: 'Skin care' },
-      { name: 'Pediatrics', description: 'Child care' },
+      {
+        name: 'Cardiology',
+        nameAr: 'قلبية',
+        description: 'Heart and blood vessel care — checkups, ECG, echo, and ongoing cardiac follow-up.',
+        descriptionAr: 'رعاية القلب والأوعية الدموية — كشف دوري، رسم قلب، إيكو، ومتابعة مستمرة.',
+      },
+      {
+        name: 'Dermatology',
+        nameAr: 'جلدية',
+        description: 'Skin, hair and nail care — acne, eczema, allergies, and cosmetic consultations.',
+        descriptionAr: 'رعاية الجلد والشعر والأظافر — حب الشباب، الإكزيما، الحساسية، واستشارات التجميل.',
+      },
+      {
+        name: 'Pediatrics',
+        nameAr: 'أطفال',
+        description: 'Healthcare for infants, children and teens — vaccinations, growth and development.',
+        descriptionAr: 'رعاية الرضع والأطفال والمراهقين — تطعيمات ومتابعة النمو والتطور.',
+      },
+      {
+        name: 'Orthopedics',
+        nameAr: 'عظام',
+        description: 'Bones, joints and muscles — fractures, back and knee pain, sports injuries.',
+        descriptionAr: 'العظام والمفاصل والعضلات — الكسور، آلام الظهر والركبة، وإصابات الملاعب.',
+      },
+      {
+        name: 'Neurology',
+        nameAr: 'مخ وأعصاب',
+        description: 'Brain and nervous system — headaches, epilepsy, dizziness and nerve disorders.',
+        descriptionAr: 'المخ والجهاز العصبي — الصداع، الصرع، الدوخة، وأمراض الأعصاب.',
+      },
+      {
+        name: 'Ophthalmology',
+        nameAr: 'عيون',
+        description: 'Eye health and vision — checkups, glasses prescriptions, and eye conditions.',
+        descriptionAr: 'صحة العيون والنظر — فحص دوري، مقاسات النظارات، وأمراض العيون.',
+      },
+      {
+        name: 'General Practice',
+        nameAr: 'باطنة عامة',
+        description: 'First stop for everyday health — diagnosis, checkups and referrals.',
+        descriptionAr: 'أول خطوة لصحتك اليومية — تشخيص، فحص شامل، وتحويل للتخصص المناسب.',
+      },
+      {
+        name: 'Dentistry',
+        nameAr: 'أسنان',
+        description: 'Teeth and gum care — cleaning, fillings, braces and dental surgery.',
+        descriptionAr: 'رعاية الأسنان واللثة — تنظيف، حشو، تقويم، وجراحات الأسنان.',
+      },
     ]) {
       await req('POST', '/specialties', token, s);
     }
