@@ -1,0 +1,36 @@
+# Render Blueprint — one-click deploy of the MedFlow backend.
+# Render → New → Blueprint → select YB122/medflow-backend.
+# Fill the `sync: false` values in the dashboard when prompted.
+services:
+  - type: web
+    name: medflow-back
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: MONGODB_URI
+        sync: false # e.g. MongoDB Atlas connection string
+      - key: REDIS_URL
+        sync: false # e.g. Upstash Redis URL (optional but recommended)
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false # e.g. https://medflow-front-end.vercel.app
+      - key: SEED_ADMIN_EMAIL
+        sync: false # e.g. admin@medflow.local
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
